@@ -1,0 +1,43 @@
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      enableMouseControl:
+        type: boolean
+        description: "Enable mouse control functions"
+        default: true
+      enableKeyboardControl:
+        type: boolean
+        description: "Enable keyboard input functions"
+        default: true
+      enableAppleScript:
+        type: boolean
+        description: "Enable AppleScript execution"
+        default: true
+    required: []
+  commandFunction: |
+    function startCommand(config) {
+      const env = {};
+      
+      if (config.enableMouseControl !== undefined) {
+        env.ENABLE_MOUSE_CONTROL = config.enableMouseControl.toString();
+      }
+      
+      if (config.enableKeyboardControl !== undefined) {
+        env.ENABLE_KEYBOARD_CONTROL = config.enableKeyboardControl.toString();
+      }
+      
+      if (config.enableAppleScript !== undefined) {
+        env.ENABLE_APPLESCRIPT = config.enableAppleScript.toString();
+      }
+      
+      return {
+        command: "node",
+        args: ["index.js"],
+        env: env
+      };
+    }
+build:
+  dockerfile: Dockerfile
+  dockerBuildPath: . 
