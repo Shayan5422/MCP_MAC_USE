@@ -76,6 +76,14 @@ const testCommands = [
     params: {
       script: 'display notification "Hello from MCP Server" with title "MCP Test"'
     }
+  },
+  {
+    id: 'test-4',
+    name: 'key_press',
+    params: {
+      key: 'v',
+      modifier: 'command'
+    }
   }
 ];
 

@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM macOS Control System</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f7;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        #prompt {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px 0 0 5px;
+            font-size: 16px;
+        }
+        #send {
+            padding: 10px 20px;
+            background-color: #0071e3;
+            color: white;
+            border: none;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #send:hover {
+            background-color: #0058a3;
+        }
+        #send:disabled {
+            background-color: #93c5fd;
+            cursor: not-allowed;
+        }
+        #result {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
+            height: 400px;
+            overflow-y: auto;
+            font-family: Menlo, Monaco, 'Courier New', monospace;
+            line-height: 1.5;
+        }
+        .status-panel {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        .loader {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #0071e3;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: none;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .processing {
+            display: flex;
+            align-items: center;
+            color: #0071e3;
+        }
+        .session-id {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+        .examples {
+            margin-top: 20px;
+        }
+        .examples h3 {
+            margin-bottom: 10px;
+            font-size: 16px;
+            color: #666;
+        }
+        .example-btn {
+            margin-right: 10px;
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .example-btn:hover {
+            background-color: #dbeafe;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 6px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .badge-connected {
+            background-color: #d1fae5;
+            color: #047857;
+        }
+        .badge-disconnected {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+        .llm-settings {
+            margin: 15px 0;
+            padding: 15px;
+            background-color: #f6f8fa;
+            border-radius: 5px;
+            border: 1px solid #e1e4e8;
+        }
+        .llm-settings h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #666;
+        }
+        .settings-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        select, .api-key-input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            min-width: 150px;
+        }
+        .settings-label {
+            min-width: 100px;
+            font-size: 14px;
+        }
+        .save-settings {
+            padding: 8px 15px;
+            background-color: #0071e3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .save-settings:hover {
+            background-color: #0058a3;
+        }
+        .save-settings:disabled {
+            background-color: #93c5fd;
+            cursor: not-allowed;
+        }
+        .local-indicator {
+            font-size: 12px;
+            color: #059669;
+            margin-left: 10px;
+        }
+        .toggle-settings {
+            background: none;
+            border: none;
+            color: #0071e3;
+            cursor: pointer;
+            font-size: 13px;
+            padding: 3px 6px;
+            text-decoration: underline;
+            margin-left: auto;
+        }
+        .continue-btn {
+            display: block;
+            padding: 8px 16px;
+            margin: 10px 0;
+            background-color: #10b981;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        .continue-btn:hover {
+            background-color: #059669;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>LLM macOS Control System</h1>
+        
+        <div class="status-panel">
+            <div id="serverStatus">
+                Server status: <span id="status-badge" class="badge badge-disconnected">Connecting...</span>
+            </div>
+            <div class="session-id">
+                Session ID: <span id="session-id"></span>
+                <button id="toggle-settings" class="toggle-settings">LLM Settings</button>
+            </div>
+        </div>
+        
+        <div id="llm-settings" class="llm-settings" style="display: none;">
+            <h3>Language Model Settings</h3>
+            <div class="settings-row">
+                <div class="settings-label">Provider:</div>
+                <select id="llm-provider">
+                    <option value="openai">OpenAI</option>
+                    <option value="ollama">Ollama (Local)</option>
+                </select>
+                <div id="local-indicator" class="local-indicator" style="display: none;">Using Local AI</div>
+            </div>
+            <div class="settings-row">
+                <div class="settings-label">Model:</div>
+                <select id="llm-model"></select>
+            </div>
+            <div id="api-key-row" class="settings-row">
+                <div class="settings-label">API Key:</div>
+                <input type="password" id="api-key" class="api-key-input" placeholder="Enter your API key">
+            </div>
+            <button id="save-settings" class="save-settings">Save Settings</button>
+        </div>
+        
+        <div class="input-group">
+            <input type="text" id="prompt" placeholder="Enter your command...">
+            <button id="send">Send</button>
+        </div>
+        
+        <div class="processing">
+            <div class="loader" id="loader"></div>
+            <div id="processing-text"></div>
+        </div>
+        
+        <div id="result"></div>
+        
+        <div class="examples">
+            <h3>Example Commands:</h3>
+            <button class="example-btn">Open Safari</button>
+            <button class="example-btn">Take a screenshot</button>
+            <button class="example-btn">Show CPU usage</button>
+            <button class="example-btn">Show all running applications</button>
+            <button class="example-btn">Find the largest files in Downloads folder</button>
+        </div>
+    </div>
+
+    <script>
+        // Generate a random session ID
+        const sessionId = Math.random().toString(36).substring(2, 15);
+        document.getElementById('session-id').textContent = sessionId;
+        
+        const promptInput = document.getElementById('prompt');
+        const sendButton = document.getElementById('send');
+        const resultDiv = document.getElementById('result');
+        const loader = document.getElementById('loader');
+        const processingText = document.getElementById('processing-text');
+        const statusBadge = document.getElementById('status-badge');
+        const toggleSettingsBtn = document.getElementById('toggle-settings');
+        const settingsPanel = document.getElementById('llm-settings');
+        const providerSelect = document.getElementById('llm-provider');
+        const modelSelect = document.getElementById('llm-model');
+        const apiKeyInput = document.getElementById('api-key');
+        const apiKeyRow = document.getElementById('api-key-row');
+        const saveSettingsBtn = document.getElementById('save-settings');
+        const localIndicator = document.getElementById('local-indicator');
+        
+        let processingRequest = false;
+        let availableProviders = {};
+        let currentProvider = 'openai';
+        let currentModel = '';
+        
+        // Toggle settings panel
+        toggleSettingsBtn.addEventListener('click', () => {
+            settingsPanel.style.display = settingsPanel.style.display === 'none' ? 'block' : 'none';
+            
+            // If showing the settings panel, check Ollama availability
+            if (settingsPanel.style.display === 'block' && providerSelect.value === 'ollama') {
+                checkOllamaAvailability();
+            }
+        });
+        
+        // Provider change handler
+        providerSelect.addEventListener('change', function() {
+            const newProvider = this.value;
+            updateModelOptions(newProvider);
+            
+            // Show/hide API key input based on provider
+            if (availableProviders[newProvider] && !availableProviders[newProvider].requiresKey) {
+                apiKeyRow.style.display = 'none';
+                localIndicator.style.display = 'inline';
+                
+                // Check if Ollama is available when switching to it
+                if (newProvider === 'ollama') {
+                    checkOllamaAvailability();
+                }
+            } else {
+                apiKeyRow.style.display = 'flex';
+                localIndicator.style.display = 'none';
+            }
+        });
+        
+        // Update model dropdown options based on selected provider
+        function updateModelOptions(provider) {
+            modelSelect.innerHTML = '';
+            
+            if (availableProviders[provider] && availableProviders[provider].models) {
+                availableProviders[provider].models.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model;
+                    option.textContent = model;
+                    modelSelect.appendChild(option);
+                });
+            }
+            
+            // Set previously selected model if available
+            if (currentModel && availableProviders[provider] && 
+                availableProviders[provider].models.includes(currentModel)) {
+                modelSelect.value = currentModel;
+            }
+        }
+        
+        // Save settings handler
+        saveSettingsBtn.addEventListener('click', async function() {
+            const provider = providerSelect.value;
+            const model = modelSelect.value;
+            const apiKey = apiKeyInput.value;
+            
+            saveSettingsBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/llm-control/config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        provider, 
+                        model,
+                        apiKey: apiKey || undefined
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to save settings');
+                }
+                
+                const data = await response.json();
+                currentProvider = data.provider;
+                currentModel = data.model;
+                
+                resultDiv.textContent = `LLM settings updated: ${data.provider} with model ${data.model}`;
+                
+                // Update UI to reflect new settings
+                settingsPanel.style.display = 'none';
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+            } finally {
+                saveSettingsBtn.disabled = false;
+            }
+        });
+        
+        // Check server status on load
+        checkServerStatus();
+        
+        // Example buttons
+        document.querySelectorAll('.example-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                promptInput.value = btn.textContent;
+            });
+        });
+        
+        // Check server status periodically
+        setInterval(checkServerStatus, 10000);
+        
+        // Send button click handler
+        sendButton.addEventListener('click', sendPrompt);
+        
+        // Enter key handler
+        promptInput.addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                sendPrompt();
+            }
+        });
+        
+        // Send prompt to server
+        function sendPrompt() {
+            const prompt = promptInput.value.trim();
+            
+            if (!prompt || processingRequest) {
+                return;
+            }
+            
+            processingRequest = true;
+            sendButton.disabled = true;
+            loader.style.display = 'inline-block';
+            processingText.textContent = 'Processing your request...';
+            
+            fetch('/api/llm-control', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    prompt: prompt,
+                    sessionId: sessionId
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Server error');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    resultDiv.textContent = `Error: ${data.error}`;
+                } else {
+                    resultDiv.textContent = data.result;
+                    
+                    // If the operation has next steps but isn't complete,
+                    // add a "Continue" button to let the user proceed
+                    if (data.hasNextSteps && !data.isCompleted) {
+                        const continueBtn = document.createElement('button');
+                        continueBtn.textContent = 'Continue with Next Step';
+                        continueBtn.className = 'continue-btn';
+                        continueBtn.addEventListener('click', function() {
+                            // Send a continue command
+                            promptInput.value = "Continue with the next step";
+                            this.remove(); // Remove the button
+                            sendPrompt();
+                        });
+                        
+                        // Append the button to the result div
+                        resultDiv.appendChild(document.createElement('br'));
+                        resultDiv.appendChild(continueBtn);
+                    }
+                }
+                
+                // Auto-scroll to bottom
+                resultDiv.scrollTop = resultDiv.scrollHeight;
+            })
+            .catch(error => {
+                resultDiv.textContent = `Error: ${error.message}`;
+            })
+            .finally(() => {
+                processingRequest = false;
+                sendButton.disabled = false;
+                loader.style.display = 'none';
+                processingText.textContent = '';
+            });
+        }
+        
+        // Check server status
+        function checkServerStatus() {
+            fetch('/api/llm-control/status')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Server error');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.mcpReady) {
+                        statusBadge.textContent = 'Connected';
+                        statusBadge.className = 'badge badge-connected';
+                    } else {
+                        statusBadge.textContent = 'Starting MCP...';
+                        statusBadge.className = 'badge badge-disconnected';
+                    }
+                    
+                    // Update LLM provider information if available
+                    if (data.llm) {
+                        availableProviders = data.llm.available_providers;
+                        currentProvider = data.llm.provider;
+                        currentModel = data.llm.model;
+                        
+                        // Update UI to reflect current settings
+                        providerSelect.value = currentProvider;
+                        updateModelOptions(currentProvider);
+                        
+                        // Show/hide API key input based on provider
+                        if (availableProviders[currentProvider] && !availableProviders[currentProvider].requiresKey) {
+                            apiKeyRow.style.display = 'none';
+                            localIndicator.style.display = 'inline';
+                        } else {
+                            apiKeyRow.style.display = 'flex';
+                            localIndicator.style.display = 'none';
+                        }
+                    }
+                })
+                .catch(error => {
+                    statusBadge.textContent = 'Disconnected';
+                    statusBadge.className = 'badge badge-disconnected';
+                });
+        }
+        
+        // Check if Ollama is running locally
+        function checkOllamaAvailability() {
+            localIndicator.textContent = 'Checking Ollama...';
+            localIndicator.style.display = 'inline';
+            
+            fetch('/api/llm-control/check-ollama')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.available) {
+                        localIndicator.textContent = 'Ollama Available ✓';
+                        localIndicator.style.color = '#059669';
+                        
+                        // Update available models if provided
+                        if (data.models && data.models.length > 0) {
+                            if (availableProviders.ollama) {
+                                availableProviders.ollama.models = data.models;
+                                updateModelOptions('ollama');
+                            }
+                        }
+                    } else {
+                        localIndicator.textContent = 'Ollama Not Found ✗';
+                        localIndicator.style.color = '#dc2626';
+                        
+                        // Show error in results area if there's a message
+                        if (data.message) {
+                            resultDiv.textContent = `Ollama error: ${data.message}`;
+                        }
+                    }
+                })
+                .catch(error => {
+                    localIndicator.textContent = 'Ollama Not Available ✗';
+                    localIndicator.style.color = '#dc2626';
+                    resultDiv.textContent = `Error checking Ollama: ${error.message}`;
+                });
+        }
+    </script>
+</body>
+</html> 

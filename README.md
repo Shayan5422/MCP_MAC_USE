@@ -9,6 +9,7 @@ This is a Model Context Protocol (MCP) server that allows controlling macOS thro
 - Simulate keyboard input
 - Open applications
 - Retrieve system information
+- **New**: Control your Mac using natural language with LLM integration
 
 ## Setup
 
@@ -17,10 +18,35 @@ This is a Model Context Protocol (MCP) server that allows controlling macOS thro
    npm install
    ```
 
-2. Run the server:
+2. Run the MCP server:
    ```
    npm start
    ```
+
+3. **For LLM integration**: Set your LLM API key and run the LLM server:
+   ```
+   export LLM_API_KEY=your-api-key-here
+   npm run serve
+   ```
+
+## Using the LLM Interface
+
+We've added a web interface that allows you to control your Mac using natural language commands through an LLM. To use it:
+
+1. Run the LLM server:
+   ```
+   npm run serve
+   ```
+
+2. Open your browser and navigate to `http://localhost:3000`
+
+3. Enter natural language commands like:
+   - "Open the Notes application"
+   - "Type 'Hello World'"
+   - "Click at position x=500, y=300"
+   - "Show system information"
+
+For more detailed instructions, see the [LLM Integration Guide](INSTRUCTIONS.md).
 
 ## Configuration
 
