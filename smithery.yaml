@@ -1,98 +1,48 @@
-name: mac-control
-description: Control macOS system using natural language powered by LLMs
-url: https://github.com/yourusername/mac-control
-icon: 🍎
+# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
 
-configSchema:
-  type: object
-  properties:
-    enable_mouse_control:
-      type: boolean
-      title: Enable Mouse Control
-      description: Allow control of mouse movements and clicks
-      default: true
-    enable_keyboard_control:
-      type: boolean
-      title: Enable Keyboard Control
-      description: Allow keyboard typing and key presses
-      default: true
-    enable_applescript:
-      type: boolean
-      title: Enable AppleScript Execution
-      description: Allow execution of AppleScript commands
-      default: true
-    track_state:
-      type: boolean
-      title: Enable State Tracking
-      description: Track current system state (active app, cursor position)
-      default: true
-    state_update_interval:
-      type: number
-      title: State Update Interval (ms)
-      description: How often to update system state (milliseconds)
-      default: 5000
-      minimum: 1000
-      maximum: 30000
-
-command: node index.js
-
-tools:
-  - name: run_applescript
-    description: Execute an AppleScript command
-    configuration:
-      requires: ["enable_applescript"]
-
-  - name: open_application
-    description: Open a macOS application
-    configuration:
-      requires: ["enable_applescript"]
-
-  - name: get_system_info
-    description: Get macOS system information
-    configuration:
-      requires: ["enable_applescript"]
+build:
+  dockerfile: Dockerfile
+  dockerBuildPath: .
+startCommand:
+  type: stdio
+  configSchema:
+    # JSON Schema defining the configuration options for the MCP.
+    type: object
+    required: []
+    properties:
+      enableAppleScript:
+        type: boolean
+        default: true
+        description: Enable AppleScript execution
+      enableMouseControl:
+        type: boolean
+        default: true
+        description: Enable mouse control functions
+      enableKeyboardControl:
+        type: boolean
+        default: true
+        description: Enable keyboard input functions
+  commandFunction:
+    # A JS function that produces the CLI command based on the given config to start the MCP on stdio.
+    |
+    function startCommand(config) {
+      const env = {};
       
-  - name: check_macos_version
-    description: Check macOS version for compatibility with System Preferences/Settings
-    configuration:
-      requires: ["enable_applescript"]
+      if (config.enableMouseControl !== undefined) {
+        env.ENABLE_MOUSE_CONTROL = config.enableMouseControl.toString();
+      }
       
-  - name: toggle_bluetooth
-    description: Turn Bluetooth on or off
-    configuration:
-      requires: ["enable_applescript"]
-
-  - name: type_text
-    description: Type text via keyboard
-    configuration:
-      requires: ["enable_keyboard_control"]
-
-  - name: key_press
-    description: Press a keyboard key
-    configuration:
-      requires: ["enable_keyboard_control"]
-
-  - name: mouse_click
-    description: Perform a mouse click
-    configuration:
-      requires: ["enable_mouse_control"]
-
-  - name: mouse_move
-    description: Move the mouse to a position
-    configuration:
-      requires: ["enable_mouse_control"]
+      if (config.enableKeyboardControl !== undefined) {
+        env.ENABLE_KEYBOARD_CONTROL = config.enableKeyboardControl.toString();
+      }
       
-  - name: get_current_state
-    description: Get current system state including active application and cursor position
-    configuration:
-      requires: ["track_state"]
+      if (config.enableAppleScript !== undefined) {
+        env.ENABLE_APPLESCRIPT = config.enableAppleScript.toString();
+      }
       
-  - name: get_window_position
-    description: Get position and size of a window for a specific application
-    configuration:
-      requires: ["track_state", "enable_applescript"]
-      
-  - name: get_mouse_position
-    description: Get current mouse cursor position
-    configuration:
-      requires: ["track_state", "enable_mouse_control"] 
+      return {
+        command: "node",
+        args: ["index.js"],
+        env: env
+      };
+    }
