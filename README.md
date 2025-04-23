@@ -1,5 +1,7 @@
 # Mac Control MCP Server
 
+[![smithery badge](https://smithery.ai/badge/@Shayan5422/mcp_mac_use)](https://smithery.ai/server/@Shayan5422/mcp_mac_use)
+
 This is a Model Context Protocol (MCP) server that allows controlling macOS through an AI interface. It provides tools for executing AppleScript, controlling the mouse and keyboard, and retrieving system information.
 
 ## Features
@@ -13,6 +15,15 @@ This is a Model Context Protocol (MCP) server that allows controlling macOS thro
 
 ## Setup
 
+### Installing via Smithery
+
+To install Mac Control Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@Shayan5422/mcp_mac_use):
+
+```bash
+npx -y @smithery/cli install @Shayan5422/mcp_mac_use --client claude
+```
+
+### Installing Manually
 1. Install dependencies:
    ```
    npm install
